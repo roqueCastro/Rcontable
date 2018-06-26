@@ -1,9 +1,11 @@
 package com.example.roque.rcontable;
 
+import android.icu.text.UnicodeSetSpanner;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.app.Fragment;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -11,21 +13,23 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, SwipeRefreshLayout.OnRefreshListener{
+import com.example.roque.rcontable.fragment.GastosFragment;
+import com.example.roque.rcontable.fragment.InicioFragment;
+import com.example.roque.rcontable.fragment.PrestamosFragment;
+import com.example.roque.rcontable.interfaces.OnBackPressedListener;
 
-    private static final int INTERVALO = 2000; //2 segundos para salir
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener, GastosFragment.OnFragmentInteractionListener, InicioFragment.OnFragmentInteractionListener, PrestamosFragment.OnFragmentInteractionListener {
+
+
+    private static final int INTERVALO = 3000; //2 segundos para salir
     private long tiempoPrimerClick;
 
-    WebView wv;
-    String WEB_ROOT;
-    SwipeRefreshLayout webRefresh;
+    Fragment miFragment;
 
     DrawerLayout drawer;
     NavigationView navigationView;
@@ -41,14 +45,17 @@ public class MainActivity extends AppCompatActivity
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         fab = (FloatingActionButton) findViewById(R.id.fab);
-        WEB_ROOT = getResources().getString(R.string.web_root);
-        webRefresh = (SwipeRefreshLayout)findViewById(R.id.swipeR);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
+        Fragment fragment = new InicioFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container, fragment)
+                .commit();
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -57,21 +64,25 @@ public class MainActivity extends AppCompatActivity
                         .setAction("Action", null).show();
             }
         });
-
-        webRefresh.setOnRefreshListener(this);
-        webAction();
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
+        boolean isFragment = false;
+
         int id = item.getItemId();
 
         if (id == R.id.nav_home) {
-            // Handle the camera action
+            miFragment = new InicioFragment();
+            isFragment=true;
         } else if (id == R.id.nav_gastos) {
+            miFragment = new GastosFragment();
+            isFragment=true;
 
         } else if (id == R.id.nav_prestamo) {
+            miFragment = new PrestamosFragment();
+            isFragment=true;
 
         } else if (id == R.id.nav_share) {
 
@@ -79,51 +90,34 @@ public class MainActivity extends AppCompatActivity
 
         }
 
+        if(isFragment==true){
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container, miFragment)
+                    .commit();
+        }
+
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    private void webAction() {
-
-        wv = (WebView) findViewById(R.id.webView);
-        wv.getSettings().setJavaScriptEnabled(true);
-        wv.getSettings().setAppCacheEnabled(true);
-        wv.loadUrl(WEB_ROOT);
-        webRefresh.setRefreshing(true);
-        wv.setWebViewClient(new WebViewClient(){
-
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-               wv.loadUrl("file:///android_asset/error.html");
-            }
-
-            public void onPageFinished(WebView view, String url) {
-                webRefresh.setRefreshing(false);
-            }
-
-        });
-
-    }
-
-    @Override
-    public void onRefresh() {
-        webAction();
-    }
     @Override
     public void onBackPressed() {
         if (tiempoPrimerClick + INTERVALO > System.currentTimeMillis()){
+            //super.onBackPressed();
             finish();
             return;
         }else {
-            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-            if (drawer.isDrawerOpen(GravityCompat.START)) {
-                drawer.closeDrawer(GravityCompat.START);
-            }
-            Toast.makeText(this, "Presionar dos veces para salir", Toast.LENGTH_SHORT).show();
-            onRefresh();
+            Toast.makeText(getApplicationContext(), "Presionar dos veces para salir", Toast.LENGTH_SHORT).show();
             // cargarwebservice();
         }
         tiempoPrimerClick = System.currentTimeMillis();
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
     }
 }
 
